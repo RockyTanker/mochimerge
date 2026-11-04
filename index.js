@@ -159,7 +159,7 @@ function upgradeBot(id) {
                     tier = 2
                 }
             }
-            
+
             var chance = chanceList[botList[listI][0]]
             var result = weightedRandom(botList[listI], chance)
             listI = result.index
@@ -196,19 +196,20 @@ function itemClicked(e) {
     draggable.style.top = e.clientY - (dRect.height / 2) + window.scrollY + "px"
     draggable.style.left = e.clientX - (dRect.width / 2) + "px"
 
-    function moved(e) {
-        if (e.touches) {
-            e = e.touches[0]
+    function moved(ex) {
+        if (ex.touches) {
+            ex = ex.touches[0]
             document.body.style.overflow = "hidden"
         }
-
-        draggable.style.top = e.clientY - (dRect.height / 2) + window.scrollY + "px"
-        draggable.style.left = e.clientX - (dRect.width / 2) +  "px"
+        draggable.style.top = ex.clientY - (dRect.height / 2) + window.scrollY + "px"
+        draggable.style.left = ex.clientX - (dRect.width / 2) +  "px"
+        lastTouchX = ex.clientX
+        lastTouchY = ex.clientY
     }
 
-    function final(e) {
-        if (e.touches) {
-            e = e.touches[0]
+    function final(ex) {
+        if (ex.touches) {
+            ex = ex.touches[0]
             document.body.style.overflow = "scroll"
         }
         obj.style.backgroundImage = "url(./mochibots/" + obj.id + ".png)"
@@ -216,8 +217,8 @@ function itemClicked(e) {
         draggable.style.left = "-1000px"
         
         // Find any item above it
-        var resultingX = e.clientX
-        var resultingY = e.clientY
+        var resultingX = lastTouchX
+        var resultingY = lastTouchY
         var hoverOver
         
         // Check if item is above a game item
