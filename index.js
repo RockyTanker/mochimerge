@@ -199,7 +199,9 @@ function itemClicked(e) {
     function moved(ex) {
         if (ex.touches) {
             ex = ex.touches[0]
-            document.body.style.overflow = "hidden"
+
+            // Mobile scrolll fix
+            document.body.classList.add("lock-scroll")
         }
         draggable.style.top = ex.clientY - (dRect.height / 2) + window.scrollY + "px"
         draggable.style.left = ex.clientX - (dRect.width / 2) +  "px"
@@ -210,7 +212,7 @@ function itemClicked(e) {
     function final(ex) {
         if (ex.touches) {
             ex = ex.touches[0]
-            document.body.style.overflow = "scroll"
+            document.body.classList.remove("lock-scroll")
         }
         obj.style.backgroundImage = "url(./mochibots/" + obj.id + ".png)"
         draggable.style.top = "-1000px"

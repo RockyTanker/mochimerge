@@ -1,4 +1,4 @@
-body {
+html, body {
     height: 100%;
     background-color: antiquewhite;
     text-align: center;
@@ -6,6 +6,13 @@ body {
 
 p {
     font-size: 2rem;
+}
+
+.lock-scroll {
+    overflow: hidden;
+    height: 100vh;
+    overscroll-behavior: none;
+    touch-action: none; /* Prevents touch gestures from triggering scroll */
 }
 
 .container {
@@ -46,7 +53,7 @@ p {
                 width: 100%;
                 font-size: large;
             }
-            
+
             #deleteItem {
                 width: 100%;
                 height: 10vw;
