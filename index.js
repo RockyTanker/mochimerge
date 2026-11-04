@@ -1,10 +1,41 @@
 // Variables
 const draggable = document.querySelector("#draggable")
+const trash = document.querySelector("#deleteItem")
 const music = new Audio("./sfx/music.mp3")
+const whoo = new Audio("./sfx/whoo.mp3")
 var lastTouchX, lastTouchY
 
-// Priority list
-const bots = ["bluestreak", "bugbite", "bumblebee", "cliffjumper", "dirge", "frenzy", "g2_megatron", "jazz", "megatron", "mirage", "nemesis_prime", "prime", "prowl", "ramjet", "red_alert", "rumble", "sg_megatron", "sg_prime", "sg_shockwave",  "sg_sideswipe", "sg_soundwave", "shockwave", "sideswipe", "skywarp", "smokescreen", "soundwave", "starscream", "sunstreaker", "thrust", "thundercracker", "wfc_mirage"]
+// Tiers
+const botList = [
+    ["cliffjumper"],
+    ["bumblebee", "bugbite"],
+    ["ramjet"],
+    ["thrust"],
+    ["dirge"],
+    ["shockwave", "sg_shockwave"],
+    ["bluestreak"],
+    ["soundwave", "sg_soundwave"],
+    ["megatron", "sg_megatron", "g2_megatron"],
+    ["sunstreaker"],
+    ["sideswipe", "sg_sideswipe"],
+    ["red_alert"],
+    ["mirage", "wfc_mirage"],
+    ["starscream"], ["skywarp"], ["thundercracker"],
+    ["rumble", "frenzy"],
+    ["prowl"],
+    ["prime", "sg_prime", "nemesis_prime"]
+]
+const chanceList = {
+    bumblebee: [70, 30],
+    shockwave: [80, 20],
+    soundwave: [80, 20],
+    megatron: [85, 10, 5],
+    sideswipe: [80, 20],
+    mirage: [67, 33],
+    rumble: [50, 50],
+    prime: [85, 10, 5]
+}
+const botDefault = botList[0][0]
 
 // Play music
 function playMusic() {
@@ -13,26 +44,173 @@ function playMusic() {
     music.play()
 }
 
+// Weighted Random
+function weightedRandom(items, weights) {
+    if (items.length !== weights.length) {
+    throw new Error('Items and weights must be of the same size');
+    }
+
+    if (!items.length) {
+    throw new Error('Items must not be empty');
+    }
+
+    // Preparing the cumulative weights array.
+    // For example:
+    // - weights = [1, 4, 3]
+    // - cumulativeWeights = [1, 5, 8]
+    const cumulativeWeights = [];
+    for (let i = 0; i < weights.length; i += 1) {
+    cumulativeWeights[i] = weights[i] + (cumulativeWeights[i - 1] || 0);
+    }
+
+    // Getting the random number in a range of [0...sum(weights)]
+    // For example:
+    // - weights = [1, 4, 3]
+    // - maxCumulativeWeight = 8
+    // - range for the random number is [0...8]
+    const maxCumulativeWeight = cumulativeWeights[cumulativeWeights.length - 1];
+    const randomNumber = maxCumulativeWeight * Math.random();
+
+    // Picking the random item based on its weight.
+    // The items with higher weight will be picked more often.
+    for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+    if (cumulativeWeights[itemIndex] >= randomNumber) {
+        return {
+        item: items[itemIndex],
+        index: itemIndex,
+        };
+    }
+    }
+}
+
+// Storage
+function saveInventory() {
+    // Check browser support
+    if (typeof(Storage) !== "undefined") {
+
+    // Store inv
+    for (let i = 0; i < document.getElementsByClassName("inventoryItem").length; i++) {
+        var item = document.getElementsByClassName("inventoryItem")[i]
+        if (item.hasAttribute("id")) {
+            localStorage.setItem("inv" + i, item.id);
+        } else {localStorage.removeItem("inv" + i)}
+    }
+    
+    } else {console.warn("No storage,,");}
+}
+
+
+// Upgrade bot
+function upgradeBot(id) {
+    var tier, listI, item
+
+    // Search bot and tier
+    for (let i = 0; i < botList.length; i++) {
+        var group = botList[i];
+        if (group.indexOf(id) !== -1) {
+            listI = i
+            tier = (group.indexOf(id))
+            item = [botList[listI][tier]]
+        }
+    }
+    
+    if (listI < botList.length - 1) {
+        switch (tier) {
+        // Tier 0
+        case 0:
+            listI += 1
+            item = botList[listI][0]
+
+            // Multiple tiers available
+            if (botList[listI].length >= 2) {
+                var chance = chanceList[botList[listI][0]]
+                var result = weightedRandom(botList[listI], chance)
+                listI = result.index
+                item = result.item
+            }
+            break;
+        // Tier 1
+        case 1:
+            // Find next item with tiers
+            var freezeResult
+            for (let i = 0; i < botList.length; i++) {
+                var group = botList[i];
+                if (group.length >= 2 && i > listI && !freezeResult) {
+                    freezeResult = true
+                    listI = i
+                    tier = 1
+                }
+            }
+            
+            var chance = chanceList[botList[listI][0]]
+            var result = weightedRandom(botList[listI], chance)
+            listI = result.index
+            item = result.item
+            break;
+        // Tier 2
+        case 2:
+            // Find next item with tiers
+            var freezeResult
+            for (let i = 0; i < botList.length; i++) {
+                var group = botList[i];
+                if (group.length == 3 && i > listI && !freezeResult) {
+                    freezeResult = true
+                    listI = i
+                    tier = 2
+                }
+            }
+            
+            var chance = chanceList[botList[listI][0]]
+            var result = weightedRandom(botList[listI], chance)
+            listI = result.index
+            item = result.item
+            break;
+        default:
+            break;
+        }
+    } else if (listI == botList.length - 1) {
+        tier += 1
+        item = botList[listI][tier]
+        if (tier == 3) {
+            listI += 1
+            tier = 0
+            item = "jazz"
+
+            new Audio("./sfx/yay.mp3").play()
+        }
+    }
+
+    return [listI, item]
+}
+
 // On click
 function itemClicked(e) {
     if (this.getAttribute("id") == null) {return}
+    if (e.touches) {e = e.touches[0]}
+
     var obj = this
-    var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     var dRect = draggable.getBoundingClientRect()
     obj.style.backgroundImage = null
 
     draggable.style.backgroundImage = "url(./mochibots/" + this.id + ".png)"
-    draggable.style.top = e.clientY - (dRect.height / 2) + "px"
+    draggable.style.top = e.clientY - (dRect.height / 2) + window.scrollY + "px"
     draggable.style.left = e.clientX - (dRect.width / 2) + "px"
 
-    document.onmousemove = function(e) {
-        // calculate the new cursor position:
-        draggable.style.top = e.clientY - (dRect.height / 2) + "px"
-        draggable.style.left = e.clientX - (dRect.width / 2) + "px"
+    function moved(e) {
+        if (e.touches) {
+            e = e.touches[0]
+            document.body.style.overflow = "hidden"
+        }
+
+        draggable.style.top = e.clientY - (dRect.height / 2) + window.scrollY + "px"
+        draggable.style.left = e.clientX - (dRect.width / 2) +  "px"
     }
-    
-    // On mouse relase
-    document.onmouseup = function(e) {
+
+    function final(e) {
+        if (e.touches) {
+            e = e.touches[0]
+            document.body.style.overflow = "scroll"
+        }
         obj.style.backgroundImage = "url(./mochibots/" + obj.id + ".png)"
         draggable.style.top = "-1000px"
         draggable.style.left = "-1000px"
@@ -40,9 +218,10 @@ function itemClicked(e) {
         // Find any item above it
         var resultingX = e.clientX
         var resultingY = e.clientY
-        var hoverOver = 0
+        var hoverOver
         
-        for (let i = 0; i < 9; i++) {
+        // Check if item is above a game item
+        for (let i = 0; i < document.getElementsByClassName("gameItem").length; i++) {
             var item = document.getElementsByClassName("gameItem")[i]
             var itemRect = item.getBoundingClientRect()
             var maxX = (itemRect.left + itemRect.width)
@@ -53,120 +232,115 @@ function itemClicked(e) {
             }
         }
 
-        // Check if allowed to upgrade
-        if (hoverOver.id == obj.id && hoverOver != obj) {
+        // Check if allowed to upgrade (Game items)
+        if (hoverOver && hoverOver.id == obj.id && hoverOver != obj && obj.id !== "jazz") {
             obj.removeAttribute("id")
             obj.style.backgroundImage = null
-            var botI = bots.indexOf(hoverOver.id) + 1
-            if (botI in bots == false) {botI -= 1}
 
+            var result = upgradeBot(hoverOver.id)
             // Play funny audio
-            var audioI = botI
-            if (audioI > 9) {
-                audioI = 9
-            }
-            var audio = new Audio("./sfx/bing" + audioI + ".mp3")
-            audio.play()
+            var audioI = result[0] + 1
+            if (audioI > 9) {audioI = 9}
+            new Audio("./sfx/bing" + audioI + ".mp3").play()
 
-            hoverOver.id = bots[botI]
-            hoverOver.style.backgroundImage = "url(./mochibots/" + hoverOver.id + ".png)" 
+            hoverOver.id = result[1]
+            hoverOver.style.backgroundImage = "url(./mochibots/" + result[1] + ".png)" 
+        
+        // Move item to another place
+        } else if (hoverOver && !hoverOver.id) {
+            hoverOver.id = obj.id
+            hoverOver.style.backgroundImage = "url(./mochibots/" + obj.id + ".png)" 
+
+            obj.removeAttribute("id")
+            obj.style.backgroundImage = null
         }
 
+        // Check if item is above an inventory item
+        for (let i = 0; i < document.getElementsByClassName("inventoryItem").length; i++) {
+            var item = document.getElementsByClassName("inventoryItem")[i]
+            var itemRect = item.getBoundingClientRect()
+            var maxX = (itemRect.left + itemRect.width)
+            var maxY = (itemRect.top + itemRect.height)
+
+            if (itemRect.left < resultingX && resultingX < maxX && itemRect.top < resultingY && resultingY < maxY) {
+                hoverOver = item
+            }
+        }
+
+         // Add to inventory
+        if (hoverOver && hoverOver.className == "inventoryItem" && !hoverOver.id) {
+            hoverOver.id = obj.id
+            hoverOver.style.backgroundImage = "url(./mochibots/" + obj.id + ".png)"
+
+            obj.removeAttribute("id")
+            obj.style.backgroundImage = null
+        }
+
+        // Delete item
+        var trashRect = trash.getBoundingClientRect()
+        var maxX = (trashRect.left + trashRect.width)
+        var maxY = (trashRect.top + trashRect.height)
+        if (trashRect.left < resultingX && resultingX < maxX && trashRect.top < resultingY && resultingY < maxY) {
+            obj.removeAttribute("id")
+            obj.style.backgroundImage = null
+
+            new Audio("./sfx/trash.mp3").play()
+        }
+
+        saveInventory()
         document.onmousemove = null
-        document.onmouseup = null
-    }
-}
-
-// On touch (mobile support)
-function itemTouched(e) {
-    document.body.style.overflow = "hidden"
-
-    if (this.getAttribute("id") == null) {return}
-    var obj = this
-    var dRect = draggable.getBoundingClientRect()
-    obj.style.backgroundImage = null
-
-    draggable.style.backgroundImage = "url(./mochibots/" + this.id + ".png)"
-    draggable.style.top = e.clientY - (dRect.height / 2) + "px"
-    draggable.style.left = e.clientX - (dRect.width / 2) + "px"
-
-    document.ontouchmove = function(e) {
-        // calculate the new cursor position:
-        e = e.touches[0]
-        lastTouchX = e.clientX
-        lastTouchY = e.clientY
-
-        draggable.style.top = e.clientY - (dRect.height / 2) + "px"
-        draggable.style.left = e.clientX - (dRect.width / 2) + "px"
-    }
-    
-    // On mouse relase
-    document.ontouchend = function(e) {
-        obj.style.backgroundImage = "url(./mochibots/" + obj.id + ".png)"
-        draggable.style.top = "-1000px"
-        draggable.style.left = "-1000px"
-
-        // Find any item above it
-        var resultingX = lastTouchX
-        var resultingY = lastTouchY
-        var hoverOver = 0
-        
-        for (let i = 0; i < 9; i++) {
-            var item = document.getElementsByClassName("gameItem")[i]
-            var itemRect = item.getBoundingClientRect()
-            var maxX = (itemRect.left + itemRect.width)
-            var maxY = (itemRect.top + itemRect.height)
-
-            if (itemRect.left < resultingX && resultingX < maxX && itemRect.top < resultingY && resultingY < maxY) {
-                hoverOver = item
-            }
-        }
-
-        // Check if allowed to upgrade
-        if (hoverOver.id == obj.id && hoverOver != obj) {
-            obj.removeAttribute("id")
-            obj.style.backgroundImage = null
-            var botI = bots.indexOf(hoverOver.id) + 1
-            if (botI in bots == false) {botI -= 1}
-
-            // Play funny audio
-            var audioI = botI
-            if (audioI > 9) {
-                audioI = 9
-            }
-            var audio = new Audio("./sfx/bing" + audioI + ".mp3")
-            audio.play()
-
-            hoverOver.id = bots[botI]
-            hoverOver.style.backgroundImage = "url(./mochibots/" + hoverOver.id + ".png)"
-       }
-
         document.ontouchmove = null
+        document.onmouseup = null
         document.ontouchend = null
-        document.body.style.overflow = "scroll"
     }
+
+    document.onmousemove = moved
+    document.ontouchmove = moved
+    document.onmouseup = final
+    document.ontouchend = final
 }
 
 // Get new mochis
 function newMochis() {
-    for (let i = 0; i < 9; i++) {
+    whoo.play()
+    for (let i = 0; i < document.getElementsByClassName("gameItem").length; i++) {
         var item = document.getElementsByClassName("gameItem")[i]
 
         if (!item.id) {
-            item.id = "bluestreak"
-            item.style.backgroundImage = "url(./mochibots/bluestreak.png)" 
+            item.id = botDefault
+            item.style.backgroundImage = "url(./mochibots/" + botDefault +".png)"
         }
     }
 }
 
 // Load mochis
 function loadMochis() {
-    for (let i = 0; i < 9; i++) {
+    // Resize draggable element
+    var oRect = document.getElementsByClassName("gameItem")[0].getBoundingClientRect()
+    draggable.style.width = oRect.width + "px"
+    draggable.style.height = oRect.height + "px"
+
+    // Connect items
+    for (let i = 0; i < document.getElementsByClassName("gameItem").length; i++) {
         var item = document.getElementsByClassName("gameItem")[i]
-        item.id = "bluestreak"
-        item.style.backgroundImage = "url(./mochibots/bluestreak.png)" 
+        item.id = botDefault
+        item.style.backgroundImage = "url(./mochibots/" + botDefault +".png)" 
         item.addEventListener("mousedown", itemClicked)
-        item.addEventListener("touchstart", itemTouched)
+        item.addEventListener("touchstart", itemClicked)
+    }
+    // Connect inventory
+    for (let i = 0; i < document.getElementsByClassName("inventoryItem").length; i++) {
+        var item = document.getElementsByClassName("inventoryItem")[i]
+
+        // Storage check
+        if (typeof(Storage) !== "undefined" && (localStorage.getItem("inv" + i) == null) == false) {
+            item.id = localStorage.getItem("inv" + i)
+            item.style.backgroundImage = "url(./mochibots/" + item.id +".png)" 
+        }
+
+        // Connections
+        item.addEventListener("mousedown", itemClicked)
+        item.addEventListener("touchstart", itemClicked)
     }
 }
 loadMochis()
