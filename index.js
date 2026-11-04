@@ -293,9 +293,10 @@ function itemClicked(e) {
 
         saveInventory()
         document.onmousemove = null
-        document.ontouchmove = null
         document.onmouseup = null
         document.ontouchend = null
+
+        document.removeEventListener("touchmove", moved);
     }
 
     document.onmousemove = moved
