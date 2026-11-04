@@ -198,6 +198,7 @@ function itemClicked(e) {
 
     function moved(ex) {
         if (ex.touches) {
+            ex.preventDefault()
             ex = ex.touches[0]
 
             // Mobile scrolll fix
@@ -298,7 +299,7 @@ function itemClicked(e) {
     }
 
     document.onmousemove = moved
-    document.ontouchmove = moved
+    document.addEventListener("touchmove", moved, {passive: false});
     document.onmouseup = final
     document.ontouchend = final
 }
