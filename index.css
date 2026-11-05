@@ -100,7 +100,7 @@ p {
     position: absolute;
 }
 
-/* on smaller screens */
+/* on smaller screens: fix 1 */
 @media screen and (max-width: 927px) {
 
     #inventory {
