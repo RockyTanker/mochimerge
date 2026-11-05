@@ -42,6 +42,7 @@ p {
         }
 
         #other {
+            display: flex;
             flex-direction: column;
             width: 10vw;
             height: 100%;
@@ -93,4 +94,20 @@ p {
     background-position-y: center;
     background-repeat: no-repeat;
     position: absolute;
+}
+
+/* on smaller screens */
+@media screen and (max-width: 927px) {
+
+    #inventory {
+        height: 30vw;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        grid-auto-flow: row;
+    }
+
+    #game {
+        width: 60vw;
+        height: 60vw;
+    }
 }

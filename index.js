@@ -3,6 +3,7 @@ const draggable = document.querySelector("#draggable")
 const trash = document.querySelector("#deleteItem")
 const music = new Audio("./sfx/music.mp3")
 const whoo = new Audio("./sfx/whoo.mp3")
+const trashSFX = new Audio ("./sfx/trash.mp3")
 var lastTouchX, lastTouchY
 
 // Tiers
@@ -38,10 +39,19 @@ const chanceList = {
 const botDefault = botList[0][0]
 
 // Play music
-function playMusic() {
-    music.loop = true
-    music.volume = 0.5
-    music.play()
+var musicPlaying = false
+function playMusic(el) {
+    if (musicPlaying == false) {
+        musicPlaying = true
+        music.loop = true
+        music.volume = 0.5
+        music.play()
+        el.innerText = "stop epic music"
+    } else {
+        el.innerText = "play epic music"
+        musicPlaying = false
+        music.pause()
+    }
 }
 
 // Weighted Random
@@ -81,7 +91,20 @@ function weightedRandom(items, weights) {
         };
     }
     }
+
 }
+
+// Toggle SFX
+var sfxEnabled = true
+function toggleSFX(el) {
+    if (sfxEnabled == true) {
+        el.innerText = "turn on sfx"
+        sfxEnabled = false
+    } else {
+        el.innerText = "turn off sfx"
+        sfxEnabled = true
+    }
+}  
 
 // Storage
 function saveInventory() {
@@ -98,7 +121,6 @@ function saveInventory() {
     
     } else {console.warn("No storage,,");}
 }
-
 
 // Upgrade bot
 function upgradeBot(id) {
@@ -242,10 +264,22 @@ function itemClicked(e) {
             obj.style.backgroundImage = null
 
             var result = upgradeBot(hoverOver.id)
+
             // Play funny audio
-            var audioI = result[0] + 1
-            if (audioI > 9) {audioI = 9}
-            new Audio("./sfx/bing" + audioI + ".mp3").play()
+            if (sfxEnabled == true) {
+                var audioI = result[0] + 1
+                if (audioI > 9) {audioI = 9}
+                var bing = new Audio("./sfx/bing" + audioI + ".mp3")
+                bing.play()
+                
+                bing.addEventListener('ended', function() {
+                    bing.pause()
+                    bing.src = ''
+                    bing.load()
+                    bing = null
+                    console.log("hi")
+                }, {once: true})
+            }
 
             hoverOver.id = result[1]
             hoverOver.style.backgroundImage = "url(./mochibots/" + result[1] + ".png)" 
@@ -288,7 +322,9 @@ function itemClicked(e) {
             obj.removeAttribute("id")
             obj.style.backgroundImage = null
 
-            new Audio("./sfx/trash.mp3").play()
+            if (sfxEnabled == true) {
+                trashSFX.play()
+            }
         }
 
         saveInventory()
@@ -307,7 +343,7 @@ function itemClicked(e) {
 
 // Get new mochis
 function newMochis() {
-    whoo.play()
+    if (sfxEnabled == true) {whoo.play()}
     for (let i = 0; i < document.getElementsByClassName("gameItem").length; i++) {
         var item = document.getElementsByClassName("gameItem")[i]
 
